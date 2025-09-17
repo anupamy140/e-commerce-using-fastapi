@@ -10,6 +10,9 @@ router = APIRouter(prefix="/cart", tags=["Cart"])
 
 def serialize_cart(cart):
     cart["id"] = str(cart["_id"])
+    # Convert all ObjectId product_ids in items to strings for frontend
+    for item in cart.get("items", []):
+        item["product_id"] = str(item["product_id"])
     del cart["_id"]
     return cart
 
@@ -52,15 +55,16 @@ def add_to_cart(user_id: str, item: CartCreate):
     updated_items = []
     product_found = False
     for existing_item in cart["items"]:
-        if existing_item["product_id"] == cart_item.product_id:
+        existing_pid_str = str(existing_item["product_id"])  # Convert ObjectId to string for comparison
+        if existing_pid_str == cart_item.product_id:
             new_qty = existing_item["quantity"] + cart_item.quantity
-            updated_items.append({"product_id": cart_item.product_id, "quantity": new_qty})
+            updated_items.append({"product_id": ObjectId(cart_item.product_id), "quantity": new_qty})
             product_found = True
         else:
             updated_items.append(existing_item)
 
     if not product_found:
-        updated_items.append({"product_id": cart_item.product_id, "quantity": cart_item.quantity})
+        updated_items.append({"product_id": ObjectId(cart_item.product_id), "quantity": cart_item.quantity})
 
     # 6. Save updated cart
     cart_collection.update_one({"user_id": user_id}, {"$set": {"items": updated_items}})
@@ -75,11 +79,16 @@ def remove_from_cart(user_id: str, product_id: str):
         raise HTTPException(status_code=404, detail="Cart not found")
 
     try:
-        product_obj_id = ObjectId(product_id)
+        # Just check if product_id is valid ObjectId string
+        ObjectId(product_id)
     except Exception:
         raise HTTPException(status_code=400, detail="Invalid product ID format")
 
-    updated_items = [item for item in cart["items"] if item["product_id"] != product_obj_id]
+    # Filter out the product to remove by comparing as strings
+    updated_items = [
+        item for item in cart["items"]
+        if str(item["product_id"]) != product_id
+    ]
 
     cart_collection.update_one({"user_id": user_id}, {"$set": {"items": updated_items}})
 
@@ -92,6 +101,9 @@ def get_all_carts():
     carts = list(cart_collection.find())
     for cart in carts:
         cart["id"] = str(cart["_id"])
+        # convert product_ids to strings in items
+        for item in cart.get("items", []):
+            item["product_id"] = str(item["product_id"])
         del cart["_id"]
     return carts
 
@@ -118,7 +130,7 @@ def sort_all_cart_items(
 
     for cart in carts:
         for item in cart.get("items", []):
-            pid = item["product_id"]
+            pid = str(item["product_id"])  # convert ObjectId to string
             qty = item["quantity"]
             product_quantity_map[pid] = product_quantity_map.get(pid, 0) + qty
 
