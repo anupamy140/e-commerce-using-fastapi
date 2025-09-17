@@ -6,10 +6,14 @@ from app.routes import product_routes, cart_routes, order_routes
 from fastapi.middleware.cors import CORSMiddleware
 
 app = FastAPI()
+origins = [
+    "http://localhost:5173",
+    "*"
+]
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # or restrict to ['http://localhost:5173']
+    allow_origins=origins,  # or restrict to ['http://localhost:5173']
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

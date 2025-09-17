@@ -27,20 +27,17 @@ def get_products(
 ):
     query = {}
 
-    # 🔍 Search in title or description
     if search:
         query["$or"] = [
             {"title": {"$regex": search, "$options": "i"}},
             {"description": {"$regex": search, "$options": "i"}}
         ]
 
-    # 🧠 Category and Brand filters
     if category:
         query["category"] = category
     if brand:
         query["brand"] = brand
 
-    # 💰 Price range
     if min_price is not None or max_price is not None:
         query["price"] = {}
         if min_price is not None:
@@ -48,7 +45,6 @@ def get_products(
         if max_price is not None:
             query["price"]["$lte"] = max_price
 
-    # ⬆️ Sorting
     sort = []
     if sort_by:
         sort.append((sort_by, ASCENDING if sort_order == "asc" else DESCENDING))
@@ -108,11 +104,8 @@ def get_all_products_sorted(
 
     sort_order = ASCENDING if order.lower() == "asc" else DESCENDING
 
-    products = list(product_collection.find({}).sort(sort_by, sort_order))
-
-    for product in products:
-        product["id"] = str(product["_id"])
-        del product["_id"]
+    products_cursor = product_collection.find({}).sort(sort_by, sort_order)
+    products = [serialize_product(p) for p in products_cursor]
 
     return {
         "sort_by": sort_by,
@@ -138,11 +131,8 @@ def filter_products(
             price_filter["$lte"] = max_price
         query["price"] = price_filter
 
-    products = list(product_collection.find(query))
-
-    for product in products:
-        product["id"] = str(product["_id"])
-        del product["_id"]
+    products_cursor = product_collection.find(query)
+    products = [serialize_product(p) for p in products_cursor]
 
     return {
         "filters": {
