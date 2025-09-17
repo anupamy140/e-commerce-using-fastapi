@@ -1,19 +1,17 @@
 from fastapi import APIRouter, HTTPException, Query
 from typing import Optional, List
 from pymongo import ASCENDING, DESCENDING
-from app.database import product_collection
 from bson import ObjectId
-from app.database import product_collection  # your product collection
+from bson.errors import InvalidId
+from app.database import product_collection
 from app.schemas.product_schema import ProductCreate, ProductUpdate
 
 router = APIRouter(prefix="/products", tags=["Products"])
-
 
 def serialize_product(product):
     product["id"] = str(product["_id"])
     del product["_id"]
     return product
-
 
 @router.get("/")
 def get_products(
@@ -67,13 +65,21 @@ def get_products(
         "data": products
     }
 
+@router.get("/{product_id}")
+def get_product_by_id(product_id: str):
+    try:
+        product = product_collection.find_one({"_id": ObjectId(product_id)})
+        if not product:
+            raise HTTPException(status_code=404, detail="Product not found")
+        return serialize_product(product)
+    except InvalidId:
+        raise HTTPException(status_code=400, detail="Invalid product ID")
 
 @router.post("/", status_code=201)
 def create_product(product: ProductCreate):
     result = product_collection.insert_one(product.dict())
     new_product = product_collection.find_one({"_id": result.inserted_id})
     return serialize_product(new_product)
-
 
 @router.put("/{product_id}")
 def update_product(product_id: str, product: ProductUpdate):
@@ -84,7 +90,6 @@ def update_product(product_id: str, product: ProductUpdate):
         raise HTTPException(status_code=404, detail="Product not found")
     updated = product_collection.find_one({"_id": ObjectId(product_id)})
     return serialize_product(updated)
-
 
 @router.delete("/{product_id}")
 def delete_product(product_id: str):
@@ -98,16 +103,13 @@ def get_all_products_sorted(
     order: str,
     sort_by: str = Query("title")
 ):
-    # Validate order parameter
     if order.lower() not in ("asc", "desc"):
         raise HTTPException(status_code=400, detail="Order must be 'asc' or 'desc'.")
 
     sort_order = ASCENDING if order.lower() == "asc" else DESCENDING
 
-    # Fetch and sort all products by the given field
     products = list(product_collection.find({}).sort(sort_by, sort_order))
 
-    # Serialize products to return (convert ObjectId to str)
     for product in products:
         product["id"] = str(product["_id"])
         del product["_id"]
@@ -119,13 +121,6 @@ def get_all_products_sorted(
         "products": products
     }
 
-
-    from fastapi import APIRouter, Query
-from app.database import product_collection
-
-# router = APIRouter(prefix="/products", tags=["Products"])
-
-# router = APIRouter(prefix="/products", tags=["Products"])
 @router.get("/filter")
 def filter_products(
     category: str = Query(None, description="Filter by category"),
@@ -145,7 +140,6 @@ def filter_products(
 
     products = list(product_collection.find(query))
 
-    # Convert _id to string for JSON
     for product in products:
         product["id"] = str(product["_id"])
         del product["_id"]
