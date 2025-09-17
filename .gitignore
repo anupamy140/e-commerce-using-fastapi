@@ -1,0 +1,65 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.pkl
+*.env
+.env.*
+
+# Virtual environments
+venv/
+env/
+ENV/
+.venv/
+.ENV/
+
+# VSCode
+.vscode/
+
+# PyCharm
+.idea/
+
+# Logs
+*.log
+*.log.*
+
+# OS specific
+.DS_Store
+Thumbs.db
+
+# Jupyter Notebook checkpoints
+.ipynb_checkpoints/
+
+# Pydantic cache
+*.mypy_cache/
+*.pytest_cache/
+
+# FastAPI static/uploads (if any)
+static/
+uploads/
+
+# Compiled code
+build/
+dist/
+*.egg-info/
+
+# Coverage
+htmlcov/
+.coverage
+
+# Database dumps
+*.sqlite3
+*.db
+
+# Docker / Deployment
+docker-compose.override.yml
+*.pid
+
+# Node modules (if frontend included later)
+node_modules/
+
+# Misc
+*.bak
+*.swp
+*.tmp
