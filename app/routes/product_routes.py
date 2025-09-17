@@ -123,8 +123,9 @@ def get_all_products_sorted(
     from fastapi import APIRouter, Query
 from app.database import product_collection
 
-router = APIRouter(prefix="/products", tags=["Products"])
+# router = APIRouter(prefix="/products", tags=["Products"])
 
+# router = APIRouter(prefix="/products", tags=["Products"])
 @router.get("/filter")
 def filter_products(
     category: str = Query(None, description="Filter by category"),
